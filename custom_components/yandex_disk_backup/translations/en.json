@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Yandex.Disk for backups",
+        "description": "An OAuth token with write access to Disk is required. The folder is created if missing.",
+        "data": {
+          "token": "OAuth token",
+          "folder": "Folder on Disk"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Update token",
+        "description": "Yandex no longer accepts the previous token. Issue a new one and paste it here.",
+        "data": {
+          "token": "OAuth token"
+        }
+      }
+    },
+    "error": {
+      "invalid_token": "Yandex rejected the token",
+      "cannot_connect": "Could not reach Yandex.Disk"
+    },
+    "abort": {
+      "already_configured": "This Disk is already configured",
+      "reauth_successful": "Token updated",
+      "wrong_account": "That is a different Yandex account"
+    }
+  },
+  "exceptions": {
+    "invalid_token": {
+      "message": "Yandex rejected the token — issue a new one"
+    },
+    "cannot_connect": {
+      "message": "Yandex.Disk unavailable: {error}"
+    }
+  }
+}
