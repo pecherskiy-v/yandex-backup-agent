@@ -6,11 +6,15 @@
 и файл льётся уже на storage-узел, как это делает родной клиент.
 
 Здесь только транспорт. Всё, что можно посчитать без сети, лежит в `paths`.
+
+Токен не хранится: он берётся у Home Assistant перед каждым запросом. HA
+сам обновляет его по refresh-токену, поэтому долгая загрузка не обрывается
+на полпути из-за протухшего доступа, а нам не нужно ничего перевыпускать.
 """
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 import logging
 from typing import Any
 
@@ -40,14 +44,22 @@ class YandexDiskNotFound(YandexDiskError):
 class YandexDisk:
     """Операции, которые нужны агенту копий, и ни одной лишней."""
 
-    def __init__(self, session: ClientSession, token: str, folder: str) -> None:
+    def __init__(
+        self,
+        session: ClientSession,
+        token: Callable[[], Awaitable[str]],
+        folder: str,
+    ) -> None:
         self._session = session
         self._token = token
         self.folder = normalize_folder(folder)
 
-    @property
-    def _headers(self) -> dict[str, str]:
-        return {"Authorization": f"OAuth {self._token}", "Accept": "application/json"}
+    async def _auth_headers(self) -> dict[str, str]:
+        """Свежий токен на каждый запрос — его мог обновить HA."""
+        return {
+            "Authorization": f"OAuth {await self._token()}",
+            "Accept": "application/json",
+        }
 
     async def _call(
         self,
@@ -66,7 +78,11 @@ class YandexDisk:
         timeout = ClientTimeout(connect=CONNECT_TIMEOUT, total=120)
         try:
             async with self._session.request(
-                method, url, params=params, headers=self._headers, timeout=timeout
+                method,
+                url,
+                params=params,
+                headers=await self._auth_headers(),
+                timeout=timeout,
             ) as resp:
                 if resp.status in allow:
                     return {}
