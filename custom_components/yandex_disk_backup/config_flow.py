@@ -43,6 +43,8 @@ from .paths import normalize_folder
 
 _LOGGER = logging.getLogger(__name__)
 
+OAUTH_CONSOLE = "https://oauth.yandex.ru/client/new/"
+
 APP_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_CLIENT_ID): str,
@@ -76,7 +78,13 @@ class YandexDiskBackupConfigFlow(ConfigFlow, domain=DOMAIN):
             }
             return await self.async_step_code()
 
-        return self.async_show_form(step_id="user", data_schema=APP_SCHEMA)
+        return self.async_show_form(
+            step_id="user",
+            data_schema=APP_SCHEMA,
+            # Адрес консоли — плейсхолдером: hassfest не пускает URL в строки
+            # перевода, чтобы их не приходилось переводить вместе с текстом.
+            description_placeholders={"oauth_console_url": OAUTH_CONSOLE},
+        )
 
     async def async_step_code(
         self, user_input: dict[str, Any] | None = None

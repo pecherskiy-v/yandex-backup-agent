@@ -1,13 +1,17 @@
 {
   "domain": "yandex_disk_backup",
   "name": "Яндекс.Диск (копии)",
-  "codeowners": ["@pecherskiy-v"],
+  "codeowners": [
+    "@pecherskiy-v"
+  ],
   "config_flow": true,
-  "dependencies": ["backup"],
+  "dependencies": [
+    "backup"
+  ],
   "documentation": "https://github.com/pecherskiy-v/yandex-backup-agent",
   "integration_type": "service",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/pecherskiy-v/yandex-backup-agent/issues",
   "requirements": [],
-  "version": "3.1.1"
+  "version": "3.1.2"
 }

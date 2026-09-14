@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Yandex application",
-        "description": "Create an app at https://oauth.yandex.ru/client/new/ — platform «Web services», Yandex.Disk REST API scopes for read, write and info. Yandex fills the redirect URI itself; leave it as is. Paste the app's ClientID and secret here.",
+        "description": "Create an app at {oauth_console_url} — platform «Web services», Yandex.Disk REST API scopes for read, write and info. Yandex fills the redirect URI itself; leave it as is. Paste the app's ClientID and secret here.",
         "data": {
           "client_id": "ClientID",
           "client_secret": "Client secret"
