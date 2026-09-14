@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Awaitable, Callable
+import json
 import logging
 from typing import Any
 
@@ -94,9 +95,20 @@ class YandexDisk:
                     raise YandexDiskNotFound(f"на Диске нет {params or path}")
                 if resp.status >= 400:
                     raise YandexDiskError(await _explain(resp))
-                if resp.status == 204 or not resp.content_length:
+                if resp.status == 204:
                     return {}
-                return await resp.json(content_type=None)
+                # По длине тела судить нельзя: часть ответов Диск отдаёт
+                # chunked, без Content-Length — и ссылка на загрузку как раз
+                # из таких. Раньше мы принимали их за пустые.
+                body = (await resp.text()).strip()
+                if not body:
+                    return {}
+                try:
+                    return json.loads(body)
+                except ValueError as err:
+                    raise YandexDiskError(
+                        f"Диск ответил не JSON: {body[:120]}"
+                    ) from err
         except ClientError as err:
             raise YandexDiskError(f"Диск недоступен: {err}") from err
 
