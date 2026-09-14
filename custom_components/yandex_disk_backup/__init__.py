@@ -2,40 +2,59 @@
 
 from __future__ import annotations
 
-from aiohttp import ClientError
+import asyncio
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import YandexDisk, YandexDiskAuthError, YandexDiskError
-from .const import CONF_FOLDER, DATA_BACKUP_AGENT_LISTENERS, DEFAULT_FOLDER, DOMAIN
+from .const import (
+    CONF_CLIENT_ID,
+    CONF_CLIENT_SECRET,
+    CONF_FOLDER,
+    CONF_TOKEN,
+    DATA_BACKUP_AGENT_LISTENERS,
+    DEFAULT_FOLDER,
+    DOMAIN,
+)
+from .oauth import OAuthError, YandexOAuth
+from .tokens import token_is_fresh
 
 type YandexDiskConfigEntry = ConfigEntry[YandexDisk]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: YandexDiskConfigEntry) -> bool:
-    """Поднять сессию OAuth, проверить доступ и отдать агента менеджеру копий."""
-    implementation = (
-        await config_entry_oauth2_flow.async_get_config_entry_implementation(
-            hass, entry
-        )
+    """Проверить доступ, создать папку и отдать агента менеджеру копий."""
+    oauth = YandexOAuth(
+        async_get_clientsession(hass),
+        entry.data[CONF_CLIENT_ID],
+        entry.data[CONF_CLIENT_SECRET],
     )
-    session = config_entry_oauth2_flow.OAuth2Session(hass, entry, implementation)
+    # Обновление идёт под замком: параллельные запросы агента иначе
+    # обменяли бы один refresh-токен несколько раз подряд.
+    lock = asyncio.Lock()
 
     async def access_token() -> str:
-        """Действующий токен: HA обновит его сам, если срок вышел."""
-        try:
-            await session.async_ensure_token_valid()
-        except ClientError as err:
-            # Отказ обновить — почти всегда отозванный доступ. Просим
-            # переавторизоваться, а не молчим до ночной копии.
-            raise ConfigEntryAuthFailed(
-                translation_domain=DOMAIN, translation_key="token_refresh_failed"
-            ) from err
-        return session.token["access_token"]
+        """Действующий токен; продлевается сам, не дожидаясь отказа."""
+        async with lock:
+            token = entry.data[CONF_TOKEN]
+            if token_is_fresh(token):
+                return token["access_token"]
+
+            try:
+                fresh = await oauth.refresh(token["refresh_token"])
+            except OAuthError as err:
+                # Refresh отозвали — сам не починится, просим новый код.
+                raise ConfigEntryAuthFailed(
+                    translation_domain=DOMAIN, translation_key="token_refresh_failed"
+                ) from err
+
+            hass.config_entries.async_update_entry(
+                entry, data={**entry.data, CONF_TOKEN: fresh}
+            )
+            return fresh["access_token"]
 
     disk = YandexDisk(
         async_get_clientsession(hass),
@@ -64,15 +83,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: YandexDiskConfigEntry) -
             listener()
 
     entry.async_on_unload(entry.async_on_state_change(notify_backup_listeners))
-    entry.async_on_unload(entry.add_update_listener(_reload_on_options))
     return True
-
-
-async def _reload_on_options(
-    hass: HomeAssistant, entry: YandexDiskConfigEntry
-) -> None:
-    """Папку сменили — пересобрать агента, иначе он пишет по-старому."""
-    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: YandexDiskConfigEntry) -> bool:

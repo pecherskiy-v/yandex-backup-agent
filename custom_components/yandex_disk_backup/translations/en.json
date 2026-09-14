@@ -1,11 +1,20 @@
 {
-  "application_credentials": {
-    "description": "Create an app at [oauth.yandex.ru]({oauth_console_url}): platform «Web services», put the redirect URI shown below into the app, and grant the Yandex.Disk REST API scopes for read, write and info. Then paste the app's ClientID and secret here. Details in the [integration readme]({more_info_url})."
-  },
   "config": {
     "step": {
-      "pick_implementation": {
-        "title": "Yandex application credentials"
+      "user": {
+        "title": "Yandex application",
+        "description": "Create an app at https://oauth.yandex.ru/client/new/ — platform «Web services», Yandex.Disk REST API scopes for read, write and info. Yandex fills the redirect URI itself; leave it as is. Paste the app's ClientID and secret here.",
+        "data": {
+          "client_id": "ClientID",
+          "client_secret": "Client secret"
+        }
+      },
+      "code": {
+        "title": "Grant access to Disk",
+        "description": "Open the [authorization page]({authorize_url}), press «Allow» and paste the confirmation code Yandex shows. The code is needed once: access is refreshed automatically afterwards.",
+        "data": {
+          "code": "Confirmation code"
+        }
       },
       "folder": {
         "title": "Backup folder",
@@ -16,25 +25,18 @@
       },
       "reauth_confirm": {
         "title": "Re-confirm access",
-        "description": "Yandex no longer accepts the stored access. Press Submit to authorize again."
+        "description": "Yandex no longer accepts the stored access. Press Submit — a new confirmation code is needed."
       }
     },
     "error": {
+      "invalid_code": "The code did not work — it is single-use and short-lived, get a new one",
       "cannot_create_folder": "Could not create the folder — check the app scopes and free space"
     },
     "abort": {
       "already_configured": "This Disk is already configured",
-      "authorize_url_timeout": "Timeout generating the Yandex authorize URL",
       "cannot_connect": "Could not reach Yandex.Disk",
       "invalid_auth": "Yandex rejected the access",
-      "missing_configuration": "Add Yandex application credentials first",
-      "no_url_available": "Home Assistant has no external URL for Yandex to return to",
-      "oauth_error": "Yandex returned an authorization error",
-      "oauth_failed": "Could not exchange the authorization code",
-      "oauth_timeout": "Yandex did not answer in time",
-      "oauth_unauthorized": "Yandex rejected the ClientID or secret",
       "reauth_successful": "Access refreshed",
-      "user_rejected_authorize": "You declined the access request",
       "wrong_account": "That is a different Yandex account"
     }
   },

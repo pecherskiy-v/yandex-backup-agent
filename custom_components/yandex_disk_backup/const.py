@@ -4,7 +4,11 @@ from __future__ import annotations
 
 DOMAIN = "yandex_disk_backup"
 
+CONF_CLIENT_ID = "client_id"
+CONF_CLIENT_SECRET = "client_secret"
+CONF_CODE = "code"
 CONF_FOLDER = "folder"
+CONF_TOKEN = "token"
 
 DEFAULT_FOLDER = "Home Assistant/backups"
 
