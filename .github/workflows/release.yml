@@ -1,0 +1,52 @@
+name: Релиз
+
+# Тег — единственный жест выпуска. Пуш `vX.Y.Z` сам собирает заметки и
+# публикует релиз: без релиза HACS показывает в карточке хеш коммита
+# вместо версии, а делать это руками каждый раз никто не станет.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Сверить версию в manifest с тегом
+        run: |
+          # Разъехавшись, они дают тихую беду: HACS ставит одно, а внутри другое.
+          manifest=$(python3 -c "import json;print(json.load(open('custom_components/yandex_disk_backup/manifest.json'))['version'])")
+          tag="${GITHUB_REF_NAME#v}"
+          if [ "$manifest" != "$tag" ]; then
+            echo "manifest.json: $manifest, тег: $tag — не совпадают" >&2
+            exit 1
+          fi
+
+      - name: Заметки из коммитов
+        id: notes
+        run: |
+          previous=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
+          {
+            echo "body<<EOF"
+            if [ -n "$previous" ]; then
+              git log --pretty="- %s" "$previous..${GITHUB_REF_NAME}"
+            else
+              git log --pretty="- %s"
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Опубликовать
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "${GITHUB_REF_NAME}" \
+            --notes "${{ steps.notes.outputs.body }}"
