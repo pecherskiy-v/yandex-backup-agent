@@ -101,8 +101,16 @@ class YandexDisk:
             raise YandexDiskError(f"Диск недоступен: {err}") from err
 
     async def account(self) -> dict[str, Any]:
-        """Сведения о Диске — заодно проверка токена."""
-        return await self._call("GET", "/")
+        """Сведения о Диске — заодно проверка токена.
+
+        Поля перечисляем явно: без `fields` Диск не отдаёт блок `user`, и
+        запись получает имя «Яндекс.Диск · disk» вместо логина.
+        """
+        return await self._call(
+            "GET",
+            "/",
+            params={"fields": "user.login,user.display_name,total_space,used_space"},
+        )
 
     async def ensure_folder(self) -> None:
         """Создать папку копий вместе со всеми родительскими."""

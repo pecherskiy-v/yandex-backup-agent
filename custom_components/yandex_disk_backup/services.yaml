@@ -1,0 +1,12 @@
+upload_existing:
+  fields:
+    backup_id:
+      required: true
+      example: "4bcc4ff2"
+      selector:
+        text:
+    source_agent_id:
+      default: hassio.local
+      example: hassio.local
+      selector:
+        text:

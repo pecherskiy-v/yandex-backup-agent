@@ -60,6 +60,31 @@
     },
     "cannot_connect": {
       "message": "Yandex.Disk unavailable: {error}"
+    },
+    "unknown_source": {
+      "message": "No backup location {agent_id} — check the list in the backup panel"
+    },
+    "unknown_backup": {
+      "message": "The source has no backup {backup_id}"
+    },
+    "no_target": {
+      "message": "Yandex.Disk is not connected"
+    }
+  },
+  "services": {
+    "upload_existing": {
+      "name": "Upload a backup to Disk",
+      "description": "Sends a backup that already exists in another location to Yandex.Disk. Needed while Home Assistant's «Upload to another location» is broken.",
+      "fields": {
+        "backup_id": {
+          "name": "Backup",
+          "description": "Backup id from the backup panel."
+        },
+        "source_agent_id": {
+          "name": "From",
+          "description": "Location that holds the backup now. Defaults to local."
+        }
+      }
     }
   }
 }

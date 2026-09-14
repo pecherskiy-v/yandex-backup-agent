@@ -20,9 +20,17 @@ from .const import (
     DOMAIN,
 )
 from .oauth import OAuthError, YandexOAuth
+from .services import async_setup_services
 from .tokens import token_is_fresh
 
 type YandexDiskConfigEntry = ConfigEntry[YandexDisk]
+
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Сервисы регистрируются на домен, а не на запись: их может быть
+    несколько, а сервис нужен один."""
+    async_setup_services(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: YandexDiskConfigEntry) -> bool:
